@@ -9,7 +9,7 @@ Created on Oct 6, 2020
 from django.http import HttpResponse, JsonResponse
 import requests, time, json
 
-ENDTRACERESPONSE='trace1-'
+ENDTRACERESPONSE='trace1-OK'
 TESTPREFIX='[{"trace1end"'
 
 def health(request):
@@ -28,9 +28,11 @@ def trace1(request):
     etime = None
     stime = time.time()
     err=0
+    cip=get_client_ip(request)
+    sip=request.get_host()
    
     if next=='':
-        tt=[{"trace1end":ENDTRACERESPONSE, "hopsleft":hopsleft-1}]
+        tt=[{"trace1end":ENDTRACERESPONSE, "hopsleft":hopsleft-1, "sip":sip, "cip":cip}]
         return (JsonResponse(tt, safe=False))
    
     
@@ -53,7 +55,7 @@ def trace1(request):
         text='[{"trace1end": "OTHER","hopsleft":'+str(hopsleft-1)+'}]' 
     
     jresp=json.loads(text)
-    tt={"hop":hop, "host":nexthost, "scode":scode, "reason":reason, "err":err , "etime":etime}
+    tt={"hop":hop, "host":nexthost, "scode":scode, "reason":reason, "err":err , "etime":etime, "sip":sip, "cip":cip}
     jresp.append(tt)
     #jresp.append(tt)
     
@@ -72,3 +74,11 @@ def splitnext(n):
     
 def exec_time(st):
     return int((time.time() -st) * 1000)
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
